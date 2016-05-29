@@ -14,4 +14,5 @@
 
 + (instancetype)sharedInstance;
 - (void)checkVersion;
+- (void)checkVersion:(BOOL)needTip;
 @end

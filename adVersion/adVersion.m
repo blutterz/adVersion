@@ -66,6 +66,10 @@ NSString * const kAppItemServicesURL = @"itms-services://?action=download-manife
 }
 
 - (void)checkVersion {
+    [self checkVersion:NO];
+}
+
+- (void)checkVersion:(BOOL)needTip {
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
         NSUserDefaults* defs = [NSUserDefaults standardUserDefaults];
         NSMutableDictionary* dicts = [NSMutableDictionary dictionaryWithDictionary:[defs objectForKey:VSERSION_MANAGER]];
@@ -79,7 +83,7 @@ NSString * const kAppItemServicesURL = @"itms-services://?action=download-manife
             [defs setObject:dicts forKey:VSERSION_MANAGER];
             [defs synchronize];
         }
-        
+
         NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:kAppHouseRootURL, self.applicationBundleScheme, @"versions"]];
         NSURLRequest *urlrequest = [NSURLRequest requestWithURL:url];
         NSURLSessionDataTask* dataTask = [[NSURLSession sharedSession] dataTaskWithRequest:urlrequest completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
@@ -90,7 +94,7 @@ NSString * const kAppItemServicesURL = @"itms-services://?action=download-manife
                 NSPropertyListFormat format;
                 NSError *error2 = nil;
                 NSDictionary* pListVersion = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:&format error:&error2];
-               
+
                 if (error) {
                     return;
                 }
@@ -102,7 +106,7 @@ NSString * const kAppItemServicesURL = @"itms-services://?action=download-manife
                         [dicts setObject:mostRecentVersion forKey:VSERSION_CHECKED];
                         [defs setObject:dicts forKey:VSERSION_MANAGER];
                         [defs synchronize];
-                        
+
                         Alert* alert = [[Alert alloc] initWithTitle:@"有新版本更新" message:details delegate:nil cancelButtonTitle:@"就是不更新" otherButtonTitles:@"好吧,更一下", nil];
                         [alert setContentAlignment:NSTextAlignmentLeft];
                         [alert setLineSpacing:5];
@@ -114,13 +118,39 @@ NSString * const kAppItemServicesURL = @"itms-services://?action=download-manife
                         }];
                         [alert show];
                     }
+                    else{
+                        if(needTip){
+                            Alert* alert = [[Alert alloc] initWithTitle:@"当前没有新版本"
+                                                                message:[NSString stringWithFormat:@"您当前使用的是最新版本\n 版本号为:%@",self.applicationVersion]
+                                                               delegate:nil
+                                                      cancelButtonTitle:@"我知道了"
+                                                      otherButtonTitles:nil];
+                            //[alert setContentAlignment:NSTextAlignmentLeft];
+                            [alert setLineSpacing:5];
+                            [alert show];
+                        }
+                    }
                 }
-                
+                else{
+                    if(needTip){
+                        Alert* alert = [[Alert alloc] initWithTitle:@"错误"
+                                                            message:[NSString stringWithFormat:@"与更新服务器连接失败!\n请稍后再试\n 当前版本号为:%@",self.applicationVersion]
+                                                           delegate:nil
+                                                  cancelButtonTitle:@"我知道了"
+                                                  otherButtonTitles:nil];
+                        //[alert setContentAlignment:NSTextAlignmentLeft];
+                        [alert setLineSpacing:5];
+                        [alert show];
+                    }
+
+                }
+
             }
         }];
         [dataTask resume];
     });
 }
+
 
 - (NSString *)versionDetailsSince:(NSString *)lastVersion inDict:(NSDictionary *)dict{
     BOOL newVersionFound = NO;
